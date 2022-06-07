@@ -30,10 +30,16 @@
     info(
       `#${i}/${seed}:`,
       show(x_raw = rand_val()),
-      show(x = JAMS.normalize(x_raw)),
-      y = JAMS.stringify(x)
+      show(x1 = JAMS.normalize(x_raw)),
+      y1 = JAMS.stringify(x1)
     )
-    if (JSON.stringify(x) != JSON.stringify(x2 = JAMS.parse(y))) {
+
+    let strs = x => JSON.stringify(x).replace(/"/g, "")
+    if (strs(x1) != strs(x_raw)) {
+      throw new Error(`Normalized value does not match raw value`)
+    }
+
+    if (JSON.stringify(x1) != JSON.stringify(x2 = JAMS.parse(y1))) {
       info(`Unexpected:`, show(x2))
       throw new Error(`Failed JAMS roundtrip for seed ${seed}`)
     }
@@ -41,14 +47,22 @@
 
   puts(`<h3>Success tests</h3>
 <p>Check that <code>JAMS.parse(JAMS.stringify(x))</code> does
-nothing after <code>JAMS.normalize</code>.
-<pre style="white-space: pre-wrap; word-wrap: break-word">
-/// Example of random value:
-x = JAMS.normalize(${html(JSON.stringify(x_raw, null, 2))})
-/// Result of JAMS.stringify(x):
-/// ${html(JAMS.stringify(x))}
-y = JAMS.parse(JAMS.stringify(x))
-assert(JSON.stringify(x) == JSON.stringify(y))</pre>
+nothing after <code>JAMS.normalize</code>, which we also sanity check.
+<pre style="white-space: pre-wrap; line-break: anywhere">
+// Example of random value:
+x_raw = ${html(JSON.stringify(x_raw, null, 2))}
+
+// Sanity check:
+x1 = JAMS.normalize(x_raw)
+strs = x => JSON.stringify(x).replace(/"/g, "")
+assert(strs(x1) == strs(x_raw))
+
+// Result of JAMS.stringify(x1):
+// ${html(JAMS.stringify(x1))}
+
+// Check that the value is unchanged by the roundtrip:
+x2 = JAMS.parse(JAMS.stringify(x1))
+assert(JSON.stringify(x1) == JSON.stringify(x2))</pre>
 <p>Successfully checked ${size.toLocaleString()} random values
 (random seed ${init.toLocaleString()}).`)
 </script>
