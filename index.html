@@ -12,9 +12,10 @@
   snag = f => { try { f() } catch (x) { return x } }
   keys = x => Object.keys(x), dict = xs => Object.fromEntries(xs)
   some = xs => pick(xs, 1)[0], ambi = fs => some(fs)()
-  rand_chr = () => ambi([rand_chr_any, rand_chr_spc])
-  rand_chr_any = () => String.fromCharCode(rand(1000))
+  rand_chr = () => ambi([rand_chr_spc, rand_chr_bmp, rand_chr_ast])
   rand_chr_spc = () => some(" \r\n\t\"[]{}".split(""))
+  rand_chr_bmp = () => String.fromCharCode(rand(2e16))
+  rand_chr_ast = () => String.fromCharCode(2e16 + rand(1000))
   rand_val = () => ambi([rand_arr, rand_obj, rand_str, rand_bad])
   rand_arr = () => iotr(4).map(rand_val)
   rand_obj = () => dict(iotr(3).map(x => [rand_str(), rand_val()]))

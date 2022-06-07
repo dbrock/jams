@@ -59,7 +59,7 @@ JAMS.parse = input => {
     expect(/^|(?<=[\[\{])|\s+/y, `whitespace`)
 
     if (accept(/"/y)) {
-      let x = expect(/([^"\r\n\\]|\\([bfnrt\\"]|u[0-9a-fA-F]{4}))*/y)
+      let x = expect(/([^"\r\n\\]|\\([bfnrt\\"]|u[0-9a-fA-F]{4}))*/yu)
       expect(/"/y, `end quote`)
       return JSON.parse(`"${x}"`)
     } else if (accept(/\[/y)) {
@@ -77,7 +77,7 @@ JAMS.parse = input => {
       }
       return result
     } else {
-      return expect(/[^\s\[\]{}"\\]+/y, `expression`)
+      return expect(/[^\s\[\]{}"\\]+/yu, `expression`)
     }
   }
 
