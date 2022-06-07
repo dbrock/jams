@@ -1,0 +1,41 @@
+<!doctype html>
+<meta charset=utf8>
+<script src=jams.js></script>
+<body style="word-wrap: break-word">
+Checking that <code>JAMS.parse(JAMS.stringify(x))</code> is a noop.
+<script>
+  info = (...xs) => console.log(...xs)
+  html = x => x.replace(/</g, "&lt;").replace(/&/g, "&amp;")
+  show = x => typeof x == "string" ? JSON.stringify(x) : x
+  rand = x => (seed = seed * 75 % 65537) % x, seed = 1
+  iota = x => [...Array(x).keys()], iotr = x => iota(rand(x))
+  pick = (xs, x) => iota(x).map(x => xs[rand(xs.length)])
+  keys = x => Object.keys(x), dict = xs => Object.fromEntries(xs)
+  some = xs => pick(xs, 1)[0], ambi = fs => some(fs)()
+  rand_chr = () => ambi([rand_chr_any, rand_chr_spc])
+  rand_chr_any = () => String.fromCharCode(rand(1000))
+  rand_chr_spc = () => some(" \r\n\t\"[]{}".split(""))
+  rand_val = () => ambi([rand_str, rand_arr, rand_obj])
+  rand_str = () => ambi([rand_str1, () => show(rand_str())])
+  rand_str1 = () => pick(keys(this), rand(3)).join(rand_chr())
+  rand_arr = () => iotr(4).map(rand_val)
+  rand_obj = () => dict(iotr(3).map(x => [rand_str(), rand_val()]))
+
+  size = 999, seed = init = Math.floor(Math.random() * 10e6)
+  for (let i = 1; i <= size; i++) {
+    info(`#${i}/${seed}:`, show(x = rand_val()), y = JAMS.stringify(x))
+    if (JSON.stringify(x) != JSON.stringify(x2 = JAMS.parse(y))) {
+      info(`Unexpected:`, show(x2))
+      throw new Error(`Failed JAMS roundtrip for seed ${seed}`)
+    }
+  }
+
+  document.write(`
+<p>Ran ${size} tests successfully (random seed ${init}).
+<p>Example: <pre style="white-space: pre-wrap">
+x = ${html(JSON.stringify(x, null, 2))}
+/// Result of JAMS.stringify(x):
+/// ${html(JAMS.stringify(x))}
+y = JAMS.parse(JAMS.stringify(x))
+assert(JSON.stringify(x) == JSON.stringify(y))`)
+</script>
