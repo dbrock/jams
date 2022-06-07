@@ -85,11 +85,12 @@ manual examples of bad input.
   }
 
   flop(`]`, "Expected expression, found `]' (line 1, column 1)")
-  flop(`foo bar`, "Expected end of file, found `b' (line 1, column 5)")
   flop(`"foo\n`, "Expected end quote, found `\\n' (line 1, column 5)")
   flop(`[foo{}]`, "Expected whitespace, found `{' (line 1, column 5)")
   flop(`{foo}`, "Expected whitespace, found `}' (line 1, column 5)")
   flop(`{a c a b}`, "Duplicate key `a' (line 1, column 6)")
+  flop(`a c a b`, "Duplicate key `a' (line 1, column 5)")
+  flop(`a b c`, "Expected whitespace, found end of file (line 1, column 6)")
 
   puts(`<p>Successfully checked all failure cases.`)
 </script>

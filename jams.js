@@ -38,7 +38,9 @@ JAMS.parse = input => {
     if (result == null) {
      throw new Error([
         `Expected ${y || `/${x.source}/`},`,
-        `found \`${JSON.stringify(input[i]).replace(/^"|"$/g, "")}'`,
+        `found ${i < input.length ? "`" + (
+          JSON.stringify(input[i]).replace(/^"|"$/g, "")
+        ) + "'" : "end of file"}`,
         `(${location()})`,
       ].join(" "))
     } else {
@@ -67,21 +69,28 @@ JAMS.parse = input => {
       while (!accept(/\s*\]/y)) result.push(parse())
       return result
     } else if (accept(/\{/y)) {
-      let result = {}
-      while (!accept(/\s*\}/y)) {
-        let k = parse()
-        if (k in result) throw new Error(
-          `Duplicate key \`${k}' (${i -= k.length, location()})`
-        )
-        result[k] = parse()
-      }
-      return result
+      return parse_object(/\s*\}/y)
     } else {
       return expect(/[^\s\[\]{}"\\]+/yu, `expression`)
     }
   }
 
+  let parse_object = end => {
+    let result = {}
+    while (accept(end) == null) {
+      let k = parse()
+      if (k in result) throw new Error(
+        `Duplicate key \`${k}' (${i -= k.length, location()})`
+      )
+      result[k] = parse()
+    }
+    return result
+  }
+
   let result = parse()
-  accept(/\s*/y), expect(/$/y, `end of file`)
-  return result
+  if (typeof result == "string" && accept(/\s*$/y) == null) {
+    return i = 0, parse_object(/\s*$/y)
+  } else {
+    return accept(/\s*/y), expect(/$/y, `end of file`), result
+  }
 }
