@@ -1,8 +1,16 @@
 JAMS = {}
 
+JAMS.normalize = x => JSON.parse(JSON.stringify(x), (k, v) => (
+  typeof v == "object" && v ? v : String(v)
+))
+
 JAMS.stringify = x => {
   if (Array.isArray(x)) {
     return `[${[...x].map(JAMS.stringify).join(" ")}]`
+  } else if (typeof x == "object" && x != null) {
+    return `{${Object.entries(x).map(
+      ([k, v]) => `${JAMS.stringify(k)} ${JAMS.stringify(v)}`
+    ).join(" ")}}`
   } else if (typeof x == "string") {
     try {
       if (JAMS.parse(x) == x) {
@@ -14,9 +22,7 @@ JAMS.stringify = x => {
       return JSON.stringify(x)
     }
   } else {
-    return `{${Object.entries(x).map(
-      ([k, v]) => `${JAMS.stringify(k)} ${JAMS.stringify(v)}`
-    ).join(" ")}}`
+    throw new Error(`Found non-string value (${x}); use JAMS.normalize`)
   }
 }
 
