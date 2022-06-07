@@ -38,7 +38,7 @@ JAMS.parse = input => {
     if (result == null) {
      throw new Error([
         `Expected ${y || `/${x.source}/`},`,
-        `found \`${input[i]}'`,
+        `found \`${JSON.stringify(input[i]).replace(/^"|"$/g, "")}'`,
         `(${location()})`,
       ].join(" "))
     } else {
@@ -56,11 +56,11 @@ JAMS.parse = input => {
   }
 
   let parse = () => {
-    expect(/^|(?<=[\[\{])|\s+/y, `next expression`)
+    expect(/^|(?<=[\[\{])|\s+/y, `whitespace`)
 
     if (accept(/"/y)) {
-      let x = accept(/([^"\r\n\\]|\\([bfnrt\\"]|u[0-9a-fA-F]{4}))*/y)
-      expect(/"/y)
+      let x = expect(/([^"\r\n\\]|\\([bfnrt\\"]|u[0-9a-fA-F]{4}))*/y)
+      expect(/"/y, `end quote`)
       return JSON.parse(`"${x}"`)
     } else if (accept(/\[/y)) {
       let result = []
@@ -69,11 +69,11 @@ JAMS.parse = input => {
     } else if (accept(/\{/y)) {
       let result = {}
       while (!accept(/\s*\}/y)) {
-        let [k, v] = [parse(), parse()]
+        let k = parse()
         if (k in result) throw new Error(
-          `Duplicate key: \`${k}' (${location()})`
+          `Duplicate key \`${k}' (${i -= k.length, location()})`
         )
-        result[k] = v
+        result[k] = parse()
       }
       return result
     } else {
@@ -82,6 +82,6 @@ JAMS.parse = input => {
   }
 
   let result = parse()
-  expect(/\s*$/y, `end of file`)
+  accept(/\s*/y), expect(/$/y, `end of file`)
   return result
 }

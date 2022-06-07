@@ -1,15 +1,15 @@
 <!doctype html>
 <meta charset=utf8>
+<meta name=viewport content=width=device-width>
 <script src=jams.js></script>
-<body style="word-wrap: break-word">
-Checking that <code>JAMS.parse(JAMS.stringify(x))</code> is a no-op after passing a random object through <code>JAMS.normalize</code>.
 <script>
-  info = (...xs) => console.log(...xs)
+  info = (...xs) => console.log(...xs), puts = x => document.write(x)
   html = x => x.replace(/</g, "&lt;").replace(/&/g, "&amp;")
   show = x => typeof x == "string" ? JSON.stringify(x) : x
   rand = x => (seed = seed * 75 % 65537) % x, seed = 1
   iota = x => [...Array(x).keys()], iotr = x => iota(rand(x))
   pick = (xs, x) => iota(x).map(x => xs[rand(xs.length)])
+  snag = f => { try { f() } catch (x) { return x } }
   keys = x => Object.keys(x), dict = xs => Object.fromEntries(xs)
   some = xs => pick(xs, 1)[0], ambi = fs => some(fs)()
   rand_chr = () => ambi([rand_chr_any, rand_chr_spc])
@@ -25,7 +25,7 @@ Checking that <code>JAMS.parse(JAMS.stringify(x))</code> is a no-op after passin
   rand_bad2 = () => rand(10e5) / rand(10e5) * (rand(2) - 1)
   rand_bad3 = () => pick([/foo/, new Date(10e7), () => null])
 
-  size = 999, seed = init = Math.floor(Math.random() * 10e6)
+  size = 1000, seed = init = Math.floor(Math.random() * 10e6)
   for (let i = 1; i <= size; i++) {
     info(
       `#${i}/${seed}:`,
@@ -39,12 +39,40 @@ Checking that <code>JAMS.parse(JAMS.stringify(x))</code> is a no-op after passin
     }
   }
 
-  document.write(`
-<p>Ran ${size} tests successfully (random seed ${init}).
-<p>Example: <pre style="white-space: pre-wrap">
+  puts(`<h3>Success tests</h3>
+<p>Check that <code>JAMS.parse(JAMS.stringify(x))</code> does
+nothing after <code>JAMS.normalize</code>.
+<pre style="white-space: pre-wrap; word-wrap: break-word">
+/// Example of random value:
 x = JAMS.normalize(${html(JSON.stringify(x_raw, null, 2))})
 /// Result of JAMS.stringify(x):
 /// ${html(JAMS.stringify(x))}
 y = JAMS.parse(JAMS.stringify(x))
-assert(JSON.stringify(x) == JSON.stringify(y))`)
+assert(JSON.stringify(x) == JSON.stringify(y))</pre>
+<p>Successfully checked ${size.toLocaleString()} random values
+(random seed ${init.toLocaleString()}).`)
+</script>
+<h3>Failure tests</h3>
+<p>Check that the error messages are as we expect for the following
+manual examples of bad input.
+<script>
+  flop = (x, y) => {
+    let error = snag(() => JAMS.parse(x))
+    if (error && error.message == y) {
+      puts(`<pre>&check; JAMS.parse(${show(x)})\n> ${y}</pre>`)
+    } else {
+      puts(`<pre>&times; JAMS.parse(${show(x)})\n&lt; ${y}\n`)
+      puts(`> ${error ? error.message : "(did not fail at all)"}</pre>`)
+      throw new Error(`Failed error message test`)
+    }
+  }
+
+  flop(`]`, "Expected expression, found `]' (line 1, column 1)")
+  flop(`foo bar`, "Expected end of file, found `b' (line 1, column 5)")
+  flop(`"foo\n`, "Expected end quote, found `\\n' (line 1, column 5)")
+  flop(`[foo{}]`, "Expected whitespace, found `{' (line 1, column 5)")
+  flop(`{foo}`, "Expected whitespace, found `}' (line 1, column 5)")
+  flop(`{a c a b}`, "Duplicate key `a' (line 1, column 6)")
+
+  puts(`<p>Successfully checked all failure cases.`)
 </script>
