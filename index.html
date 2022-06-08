@@ -28,9 +28,9 @@
 </script>
 <h3>Success tests</h3>
 <p>Check that <code>JAMS.parse(JAMS.stringify(x))</code> does
-nothing after <code>JAMS.normalize</code>, which we also sanity check.
+nothing after <code>JAMS.normalize</code>.
 <script>
-  size = 1000, seed = init = Math.floor(Math.random() * 10e6)
+  size = 500, seed = init = Math.floor(Math.random() * 10e6)
   for (let i = 1; i <= size; i++) {
     info(
       `#${i}/${seed}:`,
@@ -40,9 +40,7 @@ nothing after <code>JAMS.normalize</code>, which we also sanity check.
     )
 
     let strs = x => JSON.stringify(x).replace(/"/g, "")
-    if (strs(x) != strs(w)) {
-      throw new Error(`Normalized value does not match raw value`)
-    }
+    if (strs(x) != strs(w)) throw new Error(`Bad normalization`)
 
     if (JSON.stringify(x) != JSON.stringify(y = JAMS.parse(y_jams))) {
       info(`Unexpected:`, show(y))
@@ -51,46 +49,34 @@ nothing after <code>JAMS.normalize</code>, which we also sanity check.
     }
   }
 
-  puts(`<pre style="white-space: pre-wrap; line-break: anywhere">
-// Example of random value:
-w = ${html(JSON.stringify(w, null, 2))}
-
-// Sanity check:
-x = JAMS.normalize(w)
-strs = x => toJSON(x).replace(/"/g, "")
-assert(strs(x) == strs(w))
-
-// Result of JAMS.stringify(x):
-// ${html(JAMS.stringify(x))}
-
-// Check that we get the same value back again:
-y = JAMS.parse(JAMS.stringify(x))
-assert(JSON.stringify(y) == JSON.stringify(x))</pre>
-<p>Successfully checked ${size.toLocaleString()} random values
-(random seed ${init.toLocaleString()}).`)
+  puts(`<p>Successfully checked ${size} random objects.`)
 </script>
 <h3>Failure tests</h3>
-<p>Check that the error messages are as we expect for the following
-manual examples of bad input.
+<p>Check the error messages of some examples of bad input.
 <script>
   flop = (x, y) => {
     let error = snag(() => JAMS.parse(x))
     if (error && error.message == y) {
-      puts(`<pre>&check; JAMS.parse(${show(x)})\n> ${y}</pre>`)
+      puts(`&check; JAMS.parse(${show(x)})\n> ${y}\n`)
     } else {
-      puts(`<pre>&times; JAMS.parse(${show(x)})\n&lt; ${y}\n`)
-      puts(`> ${error ? error.message : "(did not fail at all)"}</pre>`)
+      puts(`&times; JAMS.parse(${show(x)})\n&lt; ${y}\n`)
+      puts(`> ${error ? error.message : "(did not fail at all)"}\n`)
       throw new Error(`Failed error message test`)
     }
   }
 
-  flop(`]`, "Expected expression, found `]' (line 1, column 1)")
-  flop(`"foo\n`, "Expected end quote, found `\\n' (line 1, column 5)")
-  flop(`[foo{}]`, "Expected whitespace, found `{' (line 1, column 5)")
-  flop(`{foo}`, "Expected whitespace, found `}' (line 1, column 5)")
-  flop(`{a c a b}`, "Duplicate key `a' (line 1, column 6)")
-  flop(`a c a b`, "Duplicate key `a' (line 1, column 5)")
-  flop(`a c a`, "Expected whitespace, found end of file (line 1, column 6)")
-
-  puts(`<p>Successfully checked all failure cases.`)
+  try {
+    puts(`<pre>`)
+    flop(`]`, "Expected expression, found `]' (line 1, column 1)")
+    flop(`"foo\n`, "Expected end quote, found `\\n' (line 1, column 5)")
+    flop(`[foo{}]`, "Expected whitespace, found `{' (line 1, column 5)")
+    flop(`{foo}`, "Expected whitespace, found `}' (line 1, column 5)")
+    flop(`{a c a b}`, "Duplicate key `a' (line 1, column 6)")
+    flop(`a c a b`, "Duplicate key `a' (line 1, column 5)")
+    flop(`a c a`, "Expected whitespace, found end of file (line 1, column 6)")
+    puts(`</pre><p>Successfully checked all failure cases.`)
+  } catch (error) {
+    puts(`</pre><p style="color: red"><b>Failed`)
+    throw error
+  }
 </script>
