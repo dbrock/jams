@@ -27,39 +27,27 @@ JAMS.stringify = x => {
 }
 
 JAMS.parse = input => {
+  let aifn = (x, f, g) => x != null ? f(x) : g && g()
+  let fail = x => { throw new Error(x) }
+
   let i = 0, location = () => (x => `line ${
     x.split("\n").length
   }, column ${
     x.replace(/^[.\n]*\n/, "").length + 1
   }`)(input.substr(0, i))
 
-  let expect = (x, y) => {
-    let result = accept(x)
-    if (result == null) {
-     throw new Error([
-        `Expected ${y || `/${x.source}/`},`,
-        `found ${i < input.length ? "`" + (
-          JSON.stringify(input[i]).replace(/^"|"$/g, "")
-        ) + "'" : "end of file"}`,
-        `(${location()})`,
-      ].join(" "))
-    } else {
-      return result
-    }
-  }
-
-  let accept = x => {
-    x.lastIndex = i
-    let result = x.exec(input)
-    if (result) {
-      i = x.lastIndex
-      return result[0]
-    }
-  }
+  let accept = x => (x.lastIndex = i, aifn(
+    x.exec(input), y => (i = x.lastIndex, y[0])
+  )), expect = (x, y) => aifn(accept(x), x => x, () => fail([
+    `Expected ${y || `/${x.source}/`},`,
+    `found ${i < input.length ? "\`" + (
+      JSON.stringify(input[i]).replace(/^"|"$/g, "")
+    ) + "'" : "end of file"}`,
+    `(${location()})`,
+  ].join(" ")))
 
   let parse = () => {
     expect(/^|(?<=[\[\{])|\s+/y, `whitespace`)
-
     if (accept(/"/y)) {
       let x = expect(/([^"\r\n\\]|\\([bfnrt\\"]|u[0-9a-fA-F]{4}))*/yu)
       expect(/"/y, `end quote`)
@@ -79,7 +67,7 @@ JAMS.parse = input => {
     let result = {}
     while (accept(end) == null) {
       let k = parse()
-      if (k in result) throw new Error(
+      if (k in result) fail(
         `Duplicate key \`${k}' (${i -= k.length, location()})`
       )
       result[k] = parse()
