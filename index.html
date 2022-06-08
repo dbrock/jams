@@ -90,7 +90,7 @@ manual examples of bad input.
   flop(`{foo}`, "Expected whitespace, found `}' (line 1, column 5)")
   flop(`{a c a b}`, "Duplicate key `a' (line 1, column 6)")
   flop(`a c a b`, "Duplicate key `a' (line 1, column 5)")
-  flop(`a b c`, "Expected whitespace, found end of file (line 1, column 6)")
+  flop(`a c a`, "Expected whitespace, found end of file (line 1, column 6)")
 
   puts(`<p>Successfully checked all failure cases.`)
 </script>

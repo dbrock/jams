@@ -12,15 +12,8 @@ JAMS.stringify = x => {
       ([k, v]) => `${JAMS.stringify(k)} ${JAMS.stringify(v)}`
     ).join(" ")}}`
   } else if (typeof x == "string") {
-    try {
-      if (JAMS.parse(x) == x) {
-        return x
-      } else {
-        throw null
-      }
-    } catch {
-      return JSON.stringify(x)
-    }
+    let hush = f => { try { return f() } catch (_) {} }
+    return hush(() => JAMS.parse(x)) == x ? x : JSON.stringify(x)
   } else {
     throw new Error(`Found non-string value (${x}); use JAMS.normalize`)
   }
@@ -28,7 +21,7 @@ JAMS.stringify = x => {
 
 JAMS.parse = input => {
   let aifn = (x, f, g) => x != null ? f(x) : g && g()
-  let fail = x => { throw new Error(x) }
+  let make = (x, f) => (f(x), x)
 
   let i = 0, location = () => (x => `line ${
     x.split("\n").length
@@ -38,47 +31,42 @@ JAMS.parse = input => {
 
   let accept = x => (x.lastIndex = i, aifn(
     x.exec(input), y => (i = x.lastIndex, y[0])
-  )), expect = (x, y) => aifn(accept(x), x => x, () => fail([
-    `Expected ${y || `/${x.source}/`},`,
-    `found ${i < input.length ? "\`" + (
-      JSON.stringify(input[i]).replace(/^"|"$/g, "")
-    ) + "'" : "end of file"}`,
-    `(${location()})`,
-  ].join(" ")))
+  )), expect = (x, y) => aifn(accept(x), x => x, () => {
+    throw new Error([
+      `Expected ${y || `/${x.source}/`},`,
+      `found ${i < input.length ? "\`" + (
+        JSON.stringify(input[i]).replace(/^"|"$/g, "")
+      ) + "'" : "end of file"} (${location()})`,
+    ].join(" "))
+  })
 
   let parse = () => {
     expect(/^|(?<=[\[\{])|\s+/y, `whitespace`)
     if (accept(/"/y)) {
       let x = expect(/([^"\r\n\\]|\\([bfnrt\\"]|u[0-9a-fA-F]{4}))*/yu)
-      expect(/"/y, `end quote`)
-      return JSON.parse(`"${x}"`)
-    } else if (accept(/\[/y)) {
-      let result = []
-      while (!accept(/\s*\]/y)) result.push(parse())
-      return result
-    } else if (accept(/\{/y)) {
+      return expect(/"/y, `end quote`), JSON.parse(`"${x}"`)
+    } else if (accept(/\[/y)) return make([], xs => {
+      while (!accept(/\s*\]/y)) xs.push(parse())
+    }); else if (accept(/\{/y)) {
       return parse_object(/\s*\}/y)
     } else {
       return expect(/[^\s\[\]{}"\\]+/yu, `expression`)
     }
   }
 
-  let parse_object = end => {
-    let result = {}
+  let parse_object = end => make({}, x => {
     while (accept(end) == null) {
-      let k = parse()
-      if (k in result) fail(
-        `Duplicate key \`${k}' (${i -= k.length, location()})`
-      )
-      result[k] = parse()
+      let [k, i0, v] = [parse(), i, parse()]
+      if (k in x) throw new Error(`Duplicate key \`${k}' (${
+        i = i0 - k.length, location()
+      })`); else x[k] = v
     }
-    return result
-  }
+  })
 
-  let result = parse()
-  if (typeof result == "string" && accept(/\s*$/y) == null) {
+  let x = parse()
+  if (typeof x == "string" && accept(/\s*$/y) == null) {
     return i = 0, parse_object(/\s*$/y)
   } else {
-    return accept(/\s*/y), expect(/$/y, `end of file`), result
+    return accept(/\s*/y), expect(/$/y, `end of file`), x
   }
 }
