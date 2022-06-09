@@ -37,24 +37,19 @@ JAMS.parse = input => {
   })
 
   let parse = () => {
-    expect(/^|(?<=[\[\{])|\s+/y, `space`)
-    if (accept(/"/y)) {
+    expect(/^|(?<=[\[\{])|\s+/y, `space`); if (accept(/"/y)) {
       let x = expect(/([^"\r\n\\]|\\([bfnrt\\"]|u[0-9a-fA-F]{4}))*/yu)
       return expect(/"/y, `quote`), JSON.parse(`"${x}"`)
     } else if (accept(/\[/y)) return make([], xs => {
       while (!accept(/\s*\]/y)) xs.push(parse())
-    }); else if (accept(/\{/y)) {
-      return make({}, x => {
-        while (!accept(/\s*\}/y)) {
-          let [k, i0, v] = [parse(), i, parse()]
-          if (k in x) throw new Error(`Duplicate key \`${k}' (${
-            i = i0 - k.length, spot()
-          })`); else x[k] = v
-        }
-      })
-    } else {
-      return expect(/[^\s\[\]{}"\\]+/yu, `value`)
-    }
+    }); else if (accept(/\{/y)) return make({}, x => {
+      while (!accept(/\s*\}/y)) {
+        let [k, i0, v] = [parse(), i, parse()]
+        if (k in x) throw new Error(`Duplicate key \`${k}' (${
+          i = i0 - k.length, spot()
+        })`); else x[k] = v
+      }
+    }); else return expect(/[^\s\[\]{}"\\]+/yu, `value`)
   }
 
   return make(parse(), () => accept(/\s*/y), expect(/$/y, `eof`))
