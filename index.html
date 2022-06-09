@@ -68,7 +68,7 @@ nothing after <code>JAMS.normalize</code>.
   try {
     puts(`<pre>`)
     flop(`]`, "Expected value, found `]' (1:1)")
-    flop(`"foo\n`, "Expected quote, found `\\n' (1:5)")
+    flop(`"foo\n`, "Expected `\"', found `\\n' (1:5)")
     flop(`[foo{}]`, "Expected space, found `{' (1:5)")
     flop(`{foo}`, "Expected space, found `}' (1:5)")
     flop(`{a c a b}`, "Duplicate key `a' (1:6)")
