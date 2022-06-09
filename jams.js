@@ -19,31 +19,31 @@ JAMS.stringify = x => {
   }
 }
 
-JAMS.parse = input => {
+JAMS.parse = jams => {
+  let make = (x, f) => (f(x), x), same = x => x, i = 0
   let when = (x, f, g) => x != null ? f(x) : g && g()
-  let make = (x, f) => (f(x), x), id = x => x, i = 0
-  let accept = x => (x.lastIndex = i, when(
-    x.exec(input), y => (i = x.lastIndex, y[0])
-  )), expect = (x, y=`\`${x.source}'`) => when(accept(x), id, () => {
-    throw new Error(`Expected ${y}, found ${i < input.length ? "\`" + (
-      JSON.stringify(input[i]).replace(/^"|"$/g, "")
+  let take = x => (x.lastIndex = i, when(
+    x.exec(jams), y => (i = x.lastIndex, y[0])
+  )), need = (x, y=`\`${x.source}'`) => when(take(x), same, () => {
+    throw new Error(`Expected ${y}, found ${i < jams.length ? "\`" + (
+      JSON.stringify(jams[i]).replace(/^"|"$/g, "")
     ) + "'" : "eof"} (${spot()})`)
-  }), parse = () => (expect(/^|(?<=[\[\{])|\s+/y, `space`), (
-    accept(/"/y) ? JSON.parse(`"${make(expect(
+  }), read = () => (need(/^|(?<=[\[\{])|\s+/y, `space`), (
+    take(/"/y) ? JSON.parse(`"${make(need(
       /([^"\r\n\\]|\\([bfnrt\\"]|u[0-9a-fA-F]{4}))*/yu
-    ), () => expect(/"/y))}"`) : accept(/\[/y) ? make([], xs => {
-      while (!accept(/\s*\]/y)) xs.push(parse())
-    }) : accept(/\{/y) ? make({}, x => {
-      while (!accept(/\s*\}/y)) {
-        let [k, i0, v] = [parse(), i, parse()]
+    ), () => need(/"/y))}"`) : take(/\[/y) ? make([], xs => {
+      while (!take(/\s*\]/y)) xs.push(read())
+    }) : take(/\{/y) ? make({}, x => {
+      while (!take(/\s*\}/y)) {
+        let [k, i0, v] = [read(), i, read()]
         if (k in x) throw new Error(`Duplicate key \`${k}' (${
           i = i0 - k.length, spot()
         })`); x[k] = v
       }
-    }) : expect(/[^\s\[\]{}"\\]+/yu, `value`)
+    }) : need(/[^\s\[\]{}"\\]+/yu, `value`)
   )), spot = () => (x => `${x.split("\n").length}:${
     x.replace(/^[.\n]*\n/, "").length + 1
-  }`)(input.substr(0, i))
+  }`)(jams.substr(0, i))
 
-  return make(parse(), () => accept(/\s*/y), expect(/$/y, `eof`))
+  return make(read(), () => take(/\s*/y), need(/$/y, `eof`))
 }
