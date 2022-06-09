@@ -20,53 +20,42 @@ JAMS.stringify = x => {
 }
 
 JAMS.parse = input => {
-  let aifn = (x, f, g) => x != null ? f(x) : g && g()
+  let when = (x, f, g) => x != null ? f(x) : g && g()
   let make = (x, f) => (f(x), x)
-
-  let i = 0, location = () => (x => `line ${
-    x.split("\n").length
-  }, column ${
+  let spot = () => (x => `${x.split("\n").length}:${
     x.replace(/^[.\n]*\n/, "").length + 1
-  }`)(input.substr(0, i))
+  }`)(input.substr(0, i)), i = 0
 
-  let accept = x => (x.lastIndex = i, aifn(
+  let accept = x => (x.lastIndex = i, when(
     x.exec(input), y => (i = x.lastIndex, y[0])
-  )), expect = (x, y) => aifn(accept(x), x => x, () => {
+  )), expect = (x, y) => when(accept(x), x => x, () => {
     throw new Error([
-      `Expected ${y || `/${x.source}/`},`,
-      `found ${i < input.length ? "\`" + (
+      `Expected ${y}, found ${i < input.length ? "\`" + (
         JSON.stringify(input[i]).replace(/^"|"$/g, "")
-      ) + "'" : "end of file"} (${location()})`,
+      ) + "'" : "eof"} (${spot()})`,
     ].join(" "))
   })
 
   let parse = () => {
-    expect(/^|(?<=[\[\{])|\s+/y, `whitespace`)
+    expect(/^|(?<=[\[\{])|\s+/y, `space`)
     if (accept(/"/y)) {
       let x = expect(/([^"\r\n\\]|\\([bfnrt\\"]|u[0-9a-fA-F]{4}))*/yu)
-      return expect(/"/y, `end quote`), JSON.parse(`"${x}"`)
+      return expect(/"/y, `quote`), JSON.parse(`"${x}"`)
     } else if (accept(/\[/y)) return make([], xs => {
       while (!accept(/\s*\]/y)) xs.push(parse())
     }); else if (accept(/\{/y)) {
-      return parse_object(/\s*\}/y)
+      return make({}, x => {
+        while (!accept(/\s*\}/y)) {
+          let [k, i0, v] = [parse(), i, parse()]
+          if (k in x) throw new Error(`Duplicate key \`${k}' (${
+            i = i0 - k.length, spot()
+          })`); else x[k] = v
+        }
+      })
     } else {
-      return expect(/[^\s\[\]{}"\\]+/yu, `expression`)
+      return expect(/[^\s\[\]{}"\\]+/yu, `value`)
     }
   }
 
-  let parse_object = end => make({}, x => {
-    while (accept(end) == null) {
-      let [k, i0, v] = [parse(), i, parse()]
-      if (k in x) throw new Error(`Duplicate key \`${k}' (${
-        i = i0 - k.length, location()
-      })`); else x[k] = v
-    }
-  })
-
-  let x = parse()
-  if (typeof x == "string" && accept(/\s*$/y) == null) {
-    return i = 0, parse_object(/\s*$/y)
-  } else {
-    return accept(/\s*/y), expect(/$/y, `end of file`), x
-  }
+  return make(parse(), () => accept(/\s*/y), expect(/$/y, `eof`))
 }

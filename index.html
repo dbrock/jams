@@ -45,7 +45,7 @@ nothing after <code>JAMS.normalize</code>.
     if (JSON.stringify(x) != JSON.stringify(y = JAMS.parse(y_jams))) {
       info(`Unexpected:`, show(y))
       puts(`<p>&times; Falied roundtrip; see console for details`)
-      throw new Error(`Failed roundtrip`)
+      throw new Error
     }
   }
 
@@ -60,20 +60,19 @@ nothing after <code>JAMS.normalize</code>.
       puts(`&check; JAMS.parse(${show(x)})\n> ${y}\n`)
     } else {
       puts(`&times; JAMS.parse(${show(x)})\n&lt; ${y}\n`)
-      puts(`> ${error ? error.message : "(did not fail at all)"}\n`)
-      throw new Error(`Failed error message test`)
+      puts(`> ${error ? error.message : "(did not fail)"}\n`)
+      throw new Error
     }
   }
 
   try {
     puts(`<pre>`)
-    flop(`]`, "Expected expression, found `]' (line 1, column 1)")
-    flop(`"foo\n`, "Expected end quote, found `\\n' (line 1, column 5)")
-    flop(`[foo{}]`, "Expected whitespace, found `{' (line 1, column 5)")
-    flop(`{foo}`, "Expected whitespace, found `}' (line 1, column 5)")
-    flop(`{a c a b}`, "Duplicate key `a' (line 1, column 6)")
-    flop(`a c a b`, "Duplicate key `a' (line 1, column 5)")
-    flop(`a c a`, "Expected whitespace, found end of file (line 1, column 6)")
+    flop(`]`, "Expected value, found `]' (1:1)")
+    flop(`"foo\n`, "Expected quote, found `\\n' (1:5)")
+    flop(`[foo{}]`, "Expected space, found `{' (1:5)")
+    flop(`{foo}`, "Expected space, found `}' (1:5)")
+    flop(`{a c a b}`, "Duplicate key `a' (1:6)")
+    flop(`foo bar`, "Expected eof, found ` ' (1:4)")
     puts(`</pre><p>Successfully checked all failure cases.`)
   } catch (error) {
     puts(`</pre><p style="color: red"><b>Failed`)
