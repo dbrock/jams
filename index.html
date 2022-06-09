@@ -72,7 +72,7 @@ nothing after <code>JAMS.normalize</code>.
     flop(`[foo{}]`, "Expected space, found `{' (1:5)")
     flop(`{foo}`, "Expected space, found `}' (1:5)")
     flop(`{a c a b}`, "Duplicate key `a' (1:6)")
-    flop(`foo bar`, "Expected eof, found ` ' (1:4)")
+    flop(`foo bar`, "Expected eof, found `b' (1:5)")
     puts(`</pre><p>Successfully checked all failure cases.`)
   } catch (error) {
     puts(`</pre><p style="color: red"><b>Failed`)

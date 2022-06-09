@@ -1,6 +1,6 @@
 JAMS = {}, JAMS.stringify = x => Array.isArray(x) ? (
   `[${[...x].map(JAMS.stringify).join(" ")}]`
-) : typeof x == "object" && x != null ? `{${Object.entries(x).map(
+) : typeof x == "object" && x ? `{${Object.entries(x).map(
   ([k, v]) => `${JAMS.stringify(k)} ${JAMS.stringify(v)}`
 ).join(" ")}}` : typeof x == "string" ? (hush => (
   hush(() => JAMS.parse(x)) == x ? x : JSON.stringify(x)
@@ -9,11 +9,11 @@ JAMS = {}, JAMS.stringify = x => Array.isArray(x) ? (
 })(), JAMS.normalize = x => JSON.parse(JSON.stringify(x), (k, v) => (
   typeof v == "object" && v ? v : String(v)
 )), JAMS.parse = text => {
-  let make = (x, f) => (f(x), x), same = x => x, i = 0
+  let make = (x, f) => (f(x), x), i = 0
   let when = (x, f, g) => x != null ? f(x) : g && g()
   let take = x => (x.lastIndex = i, when(
     x.exec(text), y => (i = x.lastIndex, y[0])
-  )), need = (x, y=`\`${x.source}'`) => when(take(x), same, () => {
+  )), need = (x, y=`\`${x.source}'`) => when(take(x), x => x, () => {
     throw new Error(`Expected ${y}, found ${i < text.length ? "\`" + (
       JSON.stringify(text[i]).replace(/^"|"$/g, "")
     ) + "'" : "eof"} (${spot()})`)
@@ -33,5 +33,5 @@ JAMS = {}, JAMS.stringify = x => Array.isArray(x) ? (
   )), spot = () => (x => `${x.split("\n").length}:${
     x.replace(/^[.\n]*\n/, "").length + 1
   }`)(text.substr(0, i))
-  return make(read(), () => take(/\s*/y), need(/$/y, `eof`))
+  return make(read(), () => (take(/\s*/y), need(/$/y, `eof`)))
 }
