@@ -4,20 +4,15 @@ JAMS.normalize = x => JSON.parse(JSON.stringify(x), (k, v) => (
   typeof v == "object" && v ? v : String(v)
 ))
 
-JAMS.stringify = x => {
-  if (Array.isArray(x)) {
-    return `[${[...x].map(JAMS.stringify).join(" ")}]`
-  } else if (typeof x == "object" && x != null) {
-    return `{${Object.entries(x).map(
-      ([k, v]) => `${JAMS.stringify(k)} ${JAMS.stringify(v)}`
-    ).join(" ")}}`
-  } else if (typeof x == "string") {
-    let hush = f => { try { return f() } catch (_) {} }
-    return hush(() => JAMS.parse(x)) == x ? x : JSON.stringify(x)
-  } else {
-    throw new Error(`Found non-string value (${x}); use JAMS.normalize`)
-  }
-}
+JAMS.stringify = x => Array.isArray(x) ? (
+  `[${[...x].map(JAMS.stringify).join(" ")}]`
+) : typeof x == "object" && x != null ? `{${Object.entries(x).map(
+  ([k, v]) => `${JAMS.stringify(k)} ${JAMS.stringify(v)}`
+).join(" ")}}` : typeof x == "string" ? (hush => (
+  hush(() => JAMS.parse(x)) == x ? x : JSON.stringify(x)
+))(f => { try { return f() } catch (_) {} }) : (() => {
+  throw new Error(`Found non-string value (${x}); use JAMS.normalize`)
+})()
 
 JAMS.parse = jams => {
   let make = (x, f) => (f(x), x), same = x => x, i = 0
